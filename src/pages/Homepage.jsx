@@ -26,7 +26,7 @@ const Homepage = () => {
         <CardContent className="p-6">
           {/* Action Buttons */}
           <div className="flex gap-4 mb-6">
-            <Button className="bg-red-700 hover:bg-red-800">Add Bulk</Button>
+            <Button className="bg-red-700 hover:bg-red-800">Add Bulk record</Button>
             <Button className="bg-red-700 hover:bg-red-800">Upload Record</Button>
           </div>
 
