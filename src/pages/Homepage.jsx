@@ -66,6 +66,8 @@ const Homepage = () => {
                   <th className="border p-2 text-left">REQUIRE_ACTION</th>
                   <th className="border p-2 text-left">STATUS</th>
                   <th className="border p-2 text-left">OBSERVATION</th>
+                  <th className="border p-2 text-left">Compiled Report</th>
+                  <th className="border p-2 text-left">Editing Report</th>
                 </tr>
               </thead>
               <tbody>
@@ -101,6 +103,12 @@ const Homepage = () => {
                     <td className="border p-2">{row.status}</td>
                     <td className="border p-2">
                       <Button className="bg-red-700 hover:bg-red-800 w-full">Observation</Button>
+                    </td>
+                    <td className="border p-2">
+                      <Button className="bg-red-700 hover:bg-red-800 w-full">Case Details</Button>
+                    </td>
+                    <td className="border p-2">
+                      <Button className="bg-red-700 hover:bg-red-800 w-full">Edit</Button>
                     </td>
                   </tr>
                 ))}
