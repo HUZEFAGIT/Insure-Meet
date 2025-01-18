@@ -59,15 +59,15 @@ const Homepage = () => {
                   <th className="border p-2 text-left">APPLICATION #</th>
                   <th className="border p-2 text-left">APPLICANT NAME</th>
                   <th className="border p-2 text-left">APPLICATION REPORTED DATE AND TIME</th>
-                  <th className="border p-2 text-left">Form AND CALL MANAGEMENT</th>
+                  <th className="border p-2 text-left">APPLICATION FORM AND CALL MANAGEMENT</th>
                   <th className="border p-2 text-left">SEND INVITATION</th>
                   <th className="border p-2 text-left">RECORDED VIDEO</th>
                   <th className="border p-2 text-left">CURRENT STATUS</th>
-                  <th className="border p-2 text-left">REQUIRE_ACTION</th>
-                  <th className="border p-2 text-left">STATUS</th>
+                  <th className="border p-2 text-left">REQUIRE ACTION</th>
+                  <th className="border p-2 text-left">REPORT STATUS</th>
                   <th className="border p-2 text-left">OBSERVATION</th>
-                  <th className="border p-2 text-left">Compiled Report</th>
-                  <th className="border p-2 text-left">Editing Report</th>
+                  <th className="border p-2 text-left">COMPILED REPORT</th>
+                  <th className="border p-2 text-left">EDITING REPORT</th>
                 </tr>
               </thead>
               <tbody>
