@@ -3,11 +3,12 @@ import { Search } from 'lucide-react';
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Card, CardHeader, CardContent } from '../components/ui/card'
+import { Link } from 'react-router-dom';
 
 const Homepage = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const sampleData = [
+  const sampleData = [ 
     {
       srNo: 1,
       applicationNo: '6140587611',
@@ -26,8 +27,12 @@ const Homepage = () => {
         <CardContent className="p-6">
           {/* Action Buttons */}
           <div className="flex gap-4 mb-6">
-            <Button className="bg-red-700 hover:bg-red-800">Add Bulk</Button>
-            <Button className="bg-red-700 hover:bg-red-800">Upload Record</Button>
+            <Link to={"/upload-claims-page"}>
+              <Button className="bg-red-700 hover:bg-red-800">Add Bulk</Button>
+            </Link>
+            <Link to={"/upload-rec-form"}>
+              <Button className="bg-red-700 hover:bg-red-800">Upload Record</Button>
+            </Link>
           </div>
 
           {/* Search Section */}
@@ -77,13 +82,13 @@ const Homepage = () => {
                     <td className="border p-2">{row.applicationNo}</td>
                     <td className="border p-2">{row.applicantName}</td>
                     <td className="border p-2">
-                      {row.reportedDate}<br/>
+                      {row.reportedDate}<br />
                       {row.reportedTime}
                     </td>
                     <td className="border p-2">
                       <div className="flex flex-col gap-2">
-                        <Button className="bg-red-700 hover:bg-red-800 w-full">Documents</Button>
-                        <Button className="bg-red-700 hover:bg-red-800 w-full">Call Management</Button>
+                        <Link to={"/application-documents"}><Button className="bg-red-700 hover:bg-red-800 w-full">Documents</Button></Link>
+                        <Link to={"/call-management"}><Button className="bg-red-700 hover:bg-red-800 w-full">Call Management</Button></Link>
                       </div>
                     </td>
                     <td className="border p-2">
