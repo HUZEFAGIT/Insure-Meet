@@ -1,15 +1,28 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { loginUser } from "../apis/api"; 
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState(""); // Define error state
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleLogin = () => {
-    // Handle login logic
-    console.log('Email:', email, 'Password:', password);
-  };
+  const handleLogin = async () => {
+    setLoading(true);
+    const result = await loginUser(email, password);
+    if (result.success) {
+        console.log("Login Successful:", result.user);
+        localStorage.setItem("user", JSON.stringify(result.user)); // Store user info
+        navigate('/'); // Redirect to homepage
+    } else {
+        setError(result.message);
+    }
+    setLoading(false);
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
@@ -30,18 +43,22 @@ const LoginPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <Button
             className="bg-red-700 hover:bg-red-800 w-full py-2 text-white rounded-lg"
             onClick={handleLogin}
+            disabled={loading}
           >
-            Login
+            {loading ? 'Logging in...' : 'Login'}
           </Button>
-          <p className="text-center text-sm text-gray-600">
+
+          {/* <p className="text-center text-sm text-gray-600">
             Don't have an account?{' '}
             <a href="/signup" className="text-red-700 hover:underline">
               Sign up
             </a>
-          </p>
+          </p> */}
+          
         </div>
       </div>
     </div>

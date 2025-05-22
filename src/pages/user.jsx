@@ -38,7 +38,7 @@ const UserProfile = () => {
       status: 'Active'
     }
   ];
-
+ 
   const handleExport = () => {
     const ws = XLSX.utils.json_to_sheet(users);
     const wb = XLSX.utils.book_new();
@@ -121,7 +121,7 @@ const UserProfile = () => {
                         <Button className="bg-red-700 hover:bg-red-800 w-full">
                           Edit
                         </Button>
-                        <Button className="bg-red-700 hover:bg-red-800 w-full">
+                         <Button className="bg-red-700 hover:bg-red-800 w-full">
                           Delete
                         </Button>
                       </div>

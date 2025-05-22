@@ -1,14 +1,29 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
 import RLogo from '../../assets/RadiaantR.png';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Header = () => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        // Check if user is authenticated
+        const user = localStorage.getItem("user");
+        setIsAuthenticated(!!user);
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.removeItem("user"); // Remove authentication
+        setIsAuthenticated(false);
+        navigate("/login"); // Redirect to login page
+    };
+
     return (
         <div className="flex justify-between items-center bg-gray-900 text-white p-4">
             {/* Left Section: Logo and Company Name */}
             <Link to="/">
-                <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-4">
                     <img src={RLogo} width={50} alt="Radiaant Logo" />
                     <div className="flex flex-col text-left">
                         <div className="text-xl font-semibold">RADIAANT</div>
@@ -45,14 +60,17 @@ const Header = () => {
                 </Link>
             </div>
 
-            {/* Right Section: User Info and Logout */}
+            {/* Right Section: Login/Logout */}
             <div className="flex items-center space-x-4">
-                <Link to="/login">
-                    <Button variant="destructive" size="sm">Log In</Button>
-                </Link>
-                {/* <Link to="/signup">
-                    <Button variant="destructive" size="sm">Sign Up</Button>
-                </Link> */}
+                {isAuthenticated ? (
+                    <Button variant="destructive" size="sm" onClick={handleLogout}>
+                        Log Out
+                    </Button>
+                ) : (
+                    <Link to="/login">
+                        <Button variant="destructive" size="sm">Log In</Button>
+                    </Link>
+                )}
             </div>
         </div>
     );
