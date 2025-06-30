@@ -4,7 +4,6 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent } from '../components/ui/card';
 
-
 const MIS = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -88,27 +87,31 @@ const MIS = () => {
             </div>
           </div>
 
-          {/* Table */}
+          {/* MIS Table */}
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse text-xs">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="border p-2 text-left">Application_No</th>
-                  <th className="border p-2 text-left">Application_Number</th>
-                  <th className="border p-2 text-left">Allocation_Date</th>
-                  <th className="border p-2 text-left">Allocation_Time</th>
-                  <th className="border p-2 text-left">Proposer_Name</th>
-                  <th className="border p-2 text-left">ID_Details</th>
+                <tr className="bg-gray-100 whitespace-nowrap">
+                  {[
+                    "Application_Type", "Application_Number", "Policy_Number", "LA_Name", "Proposer_Name",
+                    "Case Allocation_Date", "Case Allocation_Time", "ID_Details", "Gender", "Date_of_Birth_LA",
+                    "Nominee_Name", "Nominee_DOB", "Rel_With_Nominee", "Address", "City", "State",
+                    "Contact_Number", "Alternate_Contact_Number", "Email_ID", "Application_Form", "KYC_Status",
+                    "Face_Match", "Scheduling_Date", "Calling_Date_time", "Calling_Disposition", "TelephonyNotes",
+                    "Call_Scheduling Support", "Video_Ops_Support", "Appointment_Date_Client", "Appointment_Time_Client",
+                    "Current Status", "Conclusion", "Observation", "Completion_Date", "TAT", "Priority",
+                    "Actionable", "Require_Action_Reason", "Billed", "Billing_Date", "Billing_Month",
+                    "Billing Amount", "Payment Received_Date"
+                  ].map((header) => (
+                    <th key={header} className="border p-2">{header}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 <tr className="hover:bg-gray-50">
-                  <td className="border p-2">-</td>
-                  <td className="border p-2">-</td>
-                  <td className="border p-2">14-02-2024</td>
-                  <td className="border p-2">10:30 AM</td>
-                  <td className="border p-2">-</td>
-                  <td className="border p-2">-</td>
+                  {Array(43).fill('-').map((cell, idx) => (
+                    <td key={idx} className="border p-2">{cell}</td>
+                  ))}
                 </tr>
               </tbody>
             </table>

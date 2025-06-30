@@ -23,7 +23,7 @@ const Header = () => {
         <div className="flex justify-between items-center bg-gray-900 text-white p-4">
             {/* Left Section: Logo and Company Name */}
             <Link to="/">
-                    <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4">
                     <img src={RLogo} width={50} alt="Radiaant Logo" />
                     <div className="flex flex-col text-left">
                         <div className="text-xl font-semibold">RADIAANT</div>
@@ -57,6 +57,18 @@ const Header = () => {
                     className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
                 >
                     Follow Ups
+                </Link>
+                <Link
+                    to="/video-verification"
+                    className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
+                >
+                    Video Verification
+                </Link>
+                 <Link
+                    to="/case-details"
+                    className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
+                >
+                    Case Details
                 </Link>
             </div>
 
