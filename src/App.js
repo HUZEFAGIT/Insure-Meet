@@ -68,7 +68,10 @@ const AppContent = () => {
           path="/create-user"
           element={<ProtectedRoute element={<CreateUser />} />}
         />
-        <Route path="/mis" element={<ProtectedRoute element={<MIS />} />} />
+        <Route 
+          path="/mis" 
+          element={<ProtectedRoute element={<MIS />} />} 
+        />
         <Route
           path="/follow-up"
           element={<ProtectedRoute element={<FollowUp />} />}
