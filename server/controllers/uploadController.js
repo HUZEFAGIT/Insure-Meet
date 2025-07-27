@@ -1,82 +1,200 @@
-const Upload = require('../models/Upload');
-
+const pool = require('../config/database');
 const fs = require('fs');
 const csv = require('csv-parser');
 const path = require('path');
+const XLSX = require('xlsx');
 
-const uploadFiles = async (req, res) => {
-  console.log('Received request to upload files');  // 📍1
+// Helper: Convert Excel serial date to JS date string (YYYY-MM-DD)
+function excelDateToJSDate(serial) {
+  const utc_days = Math.floor(serial - 25569);
+  const utc_value = utc_days * 86400;
+  const date_info = new Date(utc_value * 1000);
+  return date_info.toISOString().split('T')[0];
+}
+
+// Generic parser for date fields
+function parseDate(value) {
+  if (!value) return null;
+  if (!isNaN(value)) return excelDateToJSDate(value);
+  return value;
+}
+
+// POST /uploadcsv
+const uploadCSV = async (req, res) => {
   try {
-    const { title } = req.body;
-    console.log('Title:', title);  // 📍2
-
-    if (!req.files || req.files.length === 0) {
-      console.log('No files received');  // 📍3
-      return res.status(400).json({ message: 'No files uploaded' });
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
     }
+    const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
+    const results = [];
 
-    console.log('Files received:', req.files.map(file => file.originalname));  // 📍4
+    const ext = path.extname(req.file.originalname).toLowerCase();
 
-    // Parse each file and save the data to the database
-    const files = [];
-    for (const file of req.files) {
-      const filePath = path.join(__dirname, '..', 'uploads', file.filename);
-      const results = [];
-
-      // Parse CSV file
-      await new Promise((resolve, reject) => {
-        fs.createReadStream(filePath)
-          .pipe(csv())
-          .on('data', (data) => results.push(data))
-          .on('end', () => {
-            console.log('CSV file parsed successfully:', results);  // 📍5
-            resolve();
-          })
-          .on('error', (error) => {
-            console.error('Error parsing CSV:', error);
-            reject(error);
-          });
-      });
-
-      // Store parsed data in the database
-      files.push({
-        filename: file.filename,
-        originalname: file.originalname,
-        path: file.path,
-        mimetype: file.mimetype,
-        size: file.size,
-        data: results, // Store the parsed CSV data
-      });
+    if (ext === '.csv') {
+      fs.createReadStream(filePath)
+        .pipe(csv())
+        .on('data', (data) => results.push(data))
+        .on('end', async () => {
+          console.log('Column Names:', Object.keys(results[0]));
+          console.log('Data:', results);
+          await saveRowsToDb(results, req, res);
+        })
+        .on('error', (error) => {
+          res.status(500).json({ message: 'Error parsing CSV', error });
+        });
+    } else if (ext === '.xlsx' || ext === '.xls') {
+      try {
+        const workbook = XLSX.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(sheet);
+        // console.log('Column Names:', Object.keys(jsonData[0]));
+        // console.log('Data:', jsonData);
+        await saveRowsToDb(jsonData, req, res);
+      } catch (error) {
+        res.status(500).json({ message: 'Error parsing Excel file', error });
+      }
+    } else {
+      res.status(400).json({ message: 'Unsupported file type. Please upload a CSV or Excel file.' });
     }
-
-    // Save the upload information to the database
-    const upload = new Upload({
-      title,
-      files,
-    });
-
-    console.log('Saving upload to database...');  // 📍6
-    await upload.save();
-    console.log('Upload saved successfully!');    // 📍7
-
-    res.status(201).json({ message: 'Files uploaded successfully', upload });
   } catch (error) {
-    console.error('Error uploading files:', error);  // 📍8
-    res.status(500).json({ message: 'Error uploading files', error });
+    res.status(500).json({ message: 'Error uploading file', error });
   }
 };
 
-
-const getUploads = async (req, res) => {
-  console.log('Received request to fetch uploads');  // 📍1
+// Helper function to save rows to DB
+async function saveRowsToDb(rows, req, res) {
+  const client = await pool.connect();
   try {
-    const uploads = await Upload.find();  // Fetch all uploads from the DB
-    console.log(`Found ${uploads.length} uploads`);  // 📍2
-    res.status(200).json(uploads);  // Send the uploads data as response
+    await client.query('BEGIN');
+    console.log(`Starting DB transaction. Total rows: ${rows.length}`);
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNumber = i + 1;
+
+      try {
+        console.log(`Inserting row ${rowNumber}:`, row);
+
+        await client.query(
+          `INSERT INTO user_uploads (
+            application_type, application_number, name_of_la, dob_insured_person, nominee_name, nominee_relation, address, state, mobile_no_of_la, application_form, priority
+          ) VALUES (
+            $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11
+          )`,
+          [
+            row['Application_Type'],
+            row['Application Number'],
+            row['Name Of La'],
+            parseDate(row['Dob Insusred Person']),
+            row['Nominee Name'],
+            row['Nominee Relation'],
+            row['Address'],
+            row['State'],
+            row['Mobile No Of La'],
+            row['Application_Form'],
+            row['Priority']
+          ]
+        );
+
+        console.log(`Row ${rowNumber} inserted successfully.`);
+      } catch (rowError) {
+        console.error(`❌ Error inserting row ${rowNumber}:`, row);
+        console.error(rowError);
+        throw rowError; // re-throw to trigger rollback
+      }
+    }
+
+    await client.query('COMMIT');
+    console.log('✅ All rows inserted successfully. Transaction committed.');
+    res.status(201).json({ message: 'File uploaded and data saved', count: rows.length });
+  } catch (err) {
+    console.error('⛔ Error during DB transaction. Rolling back.', err);
+    await client.query('ROLLBACK');
+    res.status(500).json({ message: 'Error saving data to database', error: err });
+  } finally {
+    console.log('🔚 Releasing DB client.');
+    client.release();
+  }
+}
+
+
+// GET /myuploads
+const getMyUploads = async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM user_uploads');
+    res.status(200).json(rows);
   } catch (error) {
-    console.error('Error retrieving uploads:', error);  // 📍3
-    res.status(500).json({ message: 'Error retrieving uploads', error });
+    res.status(500).json({ message: 'Error fetching uploads', error });
   }
 };
 
-module.exports = { uploadFiles, getUploads };
+// POST /single-upload
+// const singleUpload = async (req, res) => {
+//   try {
+//     const {
+//       application_no,
+//       proposal_no,
+//       policy_id,
+//       la_name,
+//       la_dob,
+//       nominee_dob,
+//       gender,
+//       mer_type,
+//       proposer_name,
+//       phone_no,
+//       alt_phone_no,
+//       email,
+//       identification_no,
+//       state,
+//       city,
+//       country,
+//       diagnostic_center,
+//       test_detail,
+//       agent_name,
+//       agent_contact_no
+//     } = req.body;
+
+//     const client = await pool.connect();
+//     try {
+//       await client.query(
+//         `INSERT INTO user_uploads (
+//           application_no, proposal_no, policy_id, la_name, la_dob, nominee_dob, gender, mer_type, proposer_name, phone_no, alt_phone_no, email, identification_no, state, city, country, diagnostic_center, test_detail, agent_name, agent_contact_no
+//         ) VALUES (
+//           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20
+//         )`,
+//         [
+//           application_no,
+//           proposal_no,
+//           policy_id,
+//           la_name,
+//           la_dob,
+//           nominee_dob,
+//           gender,
+//           mer_type,
+//           proposer_name,
+//           phone_no,
+//           alt_phone_no,
+//           email,
+//           identification_no,
+//           state,
+//           city,
+//           country,
+//           diagnostic_center,
+//           test_detail,
+//           agent_name,
+//           agent_contact_no
+//         ]
+//       );
+//       res.status(201).json({ message: 'Single upload successful' });
+//     } catch (err) {
+//       res.status(500).json({ message: 'Error saving data to database', error: err });
+//     } finally {
+//       client.release();
+//     }
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error uploading single data', error });
+//   }
+// };
+
+module.exports = { uploadCSV, getMyUploads };

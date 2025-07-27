@@ -89,20 +89,25 @@ const VideoVerification = () => {
   const [comparisonResult, setComparisonResult] = useState(null);
   const [isComparing, setIsComparing] = useState(false);
   const [modelsLoaded, setModelsLoaded] = useState(false);
-  const [applicantDetails, setApplicantDetails] = useState({
-    applicationNo: '',
-    "Allocation date and time": '',
-    "life to be Assured": '',
-    proposerName: '',
-    DateOfBirth: '',
-    phone: '',
-    gender: '',
-    "Id details": '',
-    address: '',
-    nomineeName: '',
-    nomineeDOB: '',
-    relationWithNominee: '',
-    state: '',
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [applicantDetails, setApplicantDetails] = useState(() => {
+    return location.state?.applicantDetails || {
+      applicationNo: '',
+      "Allocation date and time": '',
+      "life to be Assured": '',
+      proposerName: '',
+      DateOfBirth: '',
+      phone: '',
+      gender: '',
+      "Id details": '',
+      address: '',
+      nomineeName: '',
+      nomineeDOB: '',
+      relationWithNominee: '',
+      state: '',
+    };
   });
   const [page, setPage] = useState('form'); // 'form', 'summary', 'casefiles'
   const [submissionData, setSubmissionData] = useState(null);
@@ -123,8 +128,6 @@ const handleDocumentSelection = (index, value) => {
   const referenceImageRef = useRef();
   const comparisonImageRef = useRef();
   const finalObservationRef = useRef(null);
-  const navigate = useNavigate();
-  const location = useLocation();
 
   
 

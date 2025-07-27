@@ -3,9 +3,8 @@ import { Search } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardHeader, CardContent } from '../components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import * as XLSX from 'xlsx';
 import { ClipLoader } from 'react-spinners';
 
 const ROWS_OPTIONS = [15, 30, 50, 100];
@@ -19,24 +18,14 @@ const Homepage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(15);
 
+  const navigate = useNavigate();
+
+  // Fetch data directly from API (no XLSX parsing)
   const fetchAndParseCSV = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:4000/api/uploads');
-      const filteredData = response.data.filter(record => record.title === "Upload Bulk Data");
-      const parsedData = [];
-      for (const record of filteredData) {
-        for (const file of record.files) {
-          const filePath = file.path;
-          const fileResponse = await axios.get(`http://localhost:4000/${filePath}`, { responseType: 'arraybuffer' });
-          const workbook = XLSX.read(fileResponse.data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(sheet);
-          parsedData.push({ fileName: file.originalname, data: jsonData });
-        }
-      }
-      setCsvData(parsedData[0]?.data || []);
+      const response = await axios.get('http://localhost:4000/api/uploads/get-uploaded-csv-data');
+      setCsvData(response.data || []);
       setCurrentPage(1); // Reset to first page on new data
     } catch (error) {
       console.error('Error processing the files:', error);
@@ -60,6 +49,21 @@ const Homepage = () => {
 
   const handlePrevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
   const handleNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+
+  // Handler for Video-verification
+  const handleVideoVerification = (row) => {
+    navigate('/video-verification', { state: { applicantDetails: row } });
+    setTimeout(() => {
+      console.log('Video-verification row:', row);
+    }, 0);
+  };
+  // Handler for Case Details
+  const handleCaseDetails = (row) => {
+    navigate('/case-details');
+    setTimeout(() => {
+      console.log('Case Details row:', row);
+    }, 0);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -146,54 +150,38 @@ const Homepage = () => {
                   <thead>
                     <tr className="bg-gray-100 text-xs font-bold text-gray-700">
                       <th className="px-2 py-2 text-left">Sr No</th>
-                      <th className="px-2 py-2 text-left">APPLICATION #</th>
-                      <th className="px-2 py-2 text-left">APPLICANT NAME</th>
-                      <th className="px-2 py-2 text-left">APPLICATION REPORTED DATE<br/>AND TIME</th>
-                      <th className="px-2 py-2 text-left">APPLICATION Form<br/>AND CALL MANAGEMENT</th>
-                      <th className="px-2 py-2 text-left">SEND INVITATION</th>
-                      <th className="px-2 py-2 text-left">CURRENT STATUS</th>
-                      <th className="px-2 py-2 text-left">REQUIRE_ACTION</th>
-                      <th className="px-2 py-2 text-left">REPORT STATUS</th>
-                      <th className="px-2 py-2 text-left">OBSERVATION</th>
-                      <th className="px-2 py-2 text-left">COMPILED REPORT</th>
+                      <th className="px-2 py-2 text-left">Application Type</th>
+                      <th className="px-2 py-2 text-left">Application Number</th>
+                      <th className="px-2 py-2 text-left">Name of LA</th>
+                      <th className="px-2 py-2 text-left">DOB (Insured Person)</th>
+                      <th className="px-2 py-2 text-left">Nominee Name</th>
+                      <th className="px-2 py-2 text-left">Nominee Relation</th>
+                      <th className="px-2 py-2 text-left">Address</th>
+                      <th className="px-2 py-2 text-left">State</th>
+                      <th className="px-2 py-2 text-left">Mobile No of LA</th>
+                      <th className="px-2 py-2 text-left">Application Form</th>
+                      <th className="px-2 py-2 text-left">Priority</th>
+                      <th className="px-2 py-2 text-left">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedData.map((row, index) => (
-                      <tr key={index + (currentPage - 1) * rowsPerPage} className="bg-white hover:bg-gray-50">
+                      <tr key={row.id} className="bg-white hover:bg-gray-50">
                         <td className="px-2 py-2">{index + 1 + (currentPage - 1) * rowsPerPage}</td>
-                        <td className="px-2 py-2">{row.Application_Number}</td>
-                        <td className="px-2 py-2">{row.Proposer_Name}</td>
-                        <td className="px-2 py-2">
-                          {row.Allocation_Date}<br />{row.Allocation_Date_Time}
-                        </td>
-                        <td className="px-2 py-2">
-                          <div className="flex flex-col gap-2">
-                            <Link to={"/application-documents"}>
-                              <Button className="bg-red-700 hover:bg-red-800 w-full">Documents</Button>
-                            </Link>
-                            <Link to={"/call-management"}>
-                              <Button className="bg-red-700 hover:bg-red-800 w-full">Call Management</Button>
-                            </Link>
-                          </div>
-                        </td>
-                        <td className="px-2 py-2">
-                          <div className="flex flex-col gap-2">
-                            <Button className="bg-red-700 hover:bg-red-800 w-full">SMS</Button>
-                            <Button className="bg-red-700 hover:bg-red-800 w-full">Join Video Meet</Button>
-                          </div>
-                        </td>
-                        <td className="px-2 py-2 text-blue-600 font-medium">{row.Current_Status}</td>
-                        <td className="px-2 py-2">{row.Require_Action_Reason}</td>
-                        <td className="px-2 py-2">{row.Report_Status}</td>
-                        <td className="px-2 py-2">{row.Observation}</td>
-                        <td className="px-2 py-2">
-                          <Link
-                            to="/case-details"
-                            state={{ caseDetails: row }}
-                          >
-                            <Button className="bg-red-700 hover:bg-red-800 w-full">CASE DETAILS</Button>
-                          </Link>
+                        <td className="px-2 py-2">{row.application_type}</td>
+                        <td className="px-2 py-2">{row.application_number}</td>
+                        <td className="px-2 py-2">{row.name_of_la}</td>
+                        <td className="px-2 py-2">{row.dob_insured_person ? new Date(row.dob_insured_person).toLocaleDateString() : ''}</td>
+                        <td className="px-2 py-2">{row.nominee_name}</td>
+                        <td className="px-2 py-2">{row.nominee_relation}</td>
+                        <td className="px-2 py-2">{row.address}</td>
+                        <td className="px-2 py-2">{row.state}</td>
+                        <td className="px-2 py-2">{row.mobile_no_of_la}</td>
+                        <td className="px-2 py-2">{row.application_form}</td>
+                        <td className="px-2 py-2">{row.priority}</td>
+                        <td className="px-2 py-2 flex gap-2">
+                          <Button className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1" onClick={() => handleVideoVerification(row)}>Video-verification</Button>
+                          <Button className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1" onClick={() => handleCaseDetails(row)}>Case Details</Button>
                         </td>
                       </tr>
                     ))}

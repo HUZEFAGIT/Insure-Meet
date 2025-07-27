@@ -1,13 +1,13 @@
 const express = require('express');
 const database = require("./config/database");
 const dotenv = require("dotenv");
-const userRoutes = require("./routes/user");
 const app = express();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const bodyParser = require("body-parser");
 const uploadRoutes = require('./routes/uploadRoutes');
-
+const testRoutes = require('./routes/test')
+const userRoutes = require('./routes/user');
 app.use(cors({
 	origin: "http://localhost:3000",
 	credentials: true, // Allow cookies and auth headers
@@ -37,3 +37,4 @@ app.listen(PORT, () => {
 
 app.use("/api/v1/auth", userRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/test',testRoutes)
