@@ -1,18 +1,22 @@
-const mongoose = require("mongoose");
+const { Pool } = require("pg");
 require("dotenv").config();
 
-const { MONGODB_URL } = process.env;
+const { DB_URL } = process.env;
 
-exports.connect = () => {
-    mongoose
-        .connect(MONGODB_URL, {
-            useNewUrlparser: true,
-            useUnifiedTopology: true,
-        })
-        .then(console.log(`DB Connection Success`))
-        .catch((err) => {
-            console.log(`DB Connection Failed`);
-            console.log(err);
-            process.exit(1);
-        });
-};
+const pool = new Pool({
+  connectionString: DB_URL,
+  ssl: {
+    rejectUnauthorized: false, 
+  },
+});
+
+pool.connect()
+  .then(() => {
+    console.log("DB Connection Success");
+  })
+  .catch((err) => {
+    console.error("DB Connection Failed", err);
+    process.exit(1);
+  });
+
+module.exports = pool;

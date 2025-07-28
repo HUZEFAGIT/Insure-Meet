@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { loginUser } from "../apis/api";
+import axios from 'axios';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -17,13 +17,17 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault(); // <-- Prevent default form submission
     setLoading(true);
-    const result = await loginUser(email, password);
-    if (result.success) {
-      console.log("Login Successful:", result.user);
-      localStorage.setItem("user", JSON.stringify(result.user));
-      navigate('/');
-    } else {
-      setError(result.message);
+    setError("");
+    try {
+      const response = await axios.post('http://localhost:4000/api/v1/auth/login', { email, password });
+      if (response.data && response.data.success) {
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+        navigate('/');
+      } else {
+        setError(response.data.message || "Login failed");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Login failed");
     }
     setLoading(false);
   };

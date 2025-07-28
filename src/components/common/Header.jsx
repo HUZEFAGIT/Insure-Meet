@@ -34,12 +34,12 @@ const Header = () => {
 
             {/* Center Section: Navigation Links */}
             <div className="flex space-x-8">
-                <Link
+                {/* <Link
                     to="/user-profile"
                     className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
                 >
                     User
-                </Link>
+                </Link> */}
                 <Link
                     to="/"
                     className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
@@ -52,12 +52,12 @@ const Header = () => {
                 >
                     MIS
                 </Link>
-                <Link
+                {/* <Link
                     to="/follow-up"
                     className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
                 >
                     Follow Ups
-                </Link>
+                </Link> */}
                 <Link
                     to="/video-verification"
                     className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
