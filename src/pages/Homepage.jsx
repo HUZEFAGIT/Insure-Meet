@@ -180,8 +180,8 @@ const Homepage = () => {
                         <td className="px-2 py-2">{row.application_form}</td>
                         <td className="px-2 py-2">{row.priority}</td>
                         <td className="px-2 py-2 flex gap-2">
-                          <Button className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1" onClick={() => handleVideoVerification(row)}>Video-verification</Button>
-                          <Button className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1" onClick={() => handleCaseDetails(row)}>Case Details</Button>
+                          <Button className="bg-red-700 hover:bg-red-800" onClick={() => handleVideoVerification(row)}>Video-verification</Button>
+                          <Button className="bg-red-700 hover:bg-red-800"onClick={() => handleCaseDetails(row)}>Case Details</Button>
                         </td>
                       </tr>
                     ))}
