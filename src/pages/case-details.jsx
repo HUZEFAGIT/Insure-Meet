@@ -507,7 +507,7 @@ const Casedetailspage = ({
           </div>
         </div>
 
-        <div className="text-base leading-relaxed text-white-800 text-justify px-9">
+        <div className="text-base leading-relaxed text-white-800 text-justify px-7 print:p-50">
               <p>
                 This is the transcript of the answers provided by the Insured verbally to the questions asked below in a video verification 
                 by the Investigating team on behalf of <span className="underline">Radiaant Captive India Pvt. Ltd.</span> Insurance Company Limited.
