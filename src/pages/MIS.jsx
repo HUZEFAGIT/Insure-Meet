@@ -166,7 +166,7 @@ const MIS = () => {
                 {loading ? (
                   <tr><td colSpan={MIS_TABLE_HEADERS.length} className="text-center p-4">Loading...</td></tr>
                 ) : misData.length === 0 ? (
-                  <tr><td colSpan={MIS_TABLE_HEADERS.length} className="text-center p-4">No data found</td></tr>
+                  <tr><td colSpan={MIS_TABLE_HEADERS.length} className="text-center font-bold p-4">No data found</td></tr>
                 ) : (
                   misData.map((row, idx) => (
                     <tr key={row.id || idx} className="hover:bg-gray-50">
