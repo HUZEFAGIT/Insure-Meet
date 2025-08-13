@@ -64,12 +64,12 @@ const Header = () => {
                 >
                     Video Verification
                 </Link>
-                 <Link
+                 {/* <Link
                     to="/case-details"
                     className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
                 >
                     Case Details
-                </Link>
+                </Link> */}
             </div>
 
             {/* Right Section: Login/Logout */}
