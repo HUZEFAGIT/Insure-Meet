@@ -38,3 +38,16 @@ app.listen(PORT, () => {
 app.use("/api/v1/auth", userRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/test',testRoutes)
+
+app.use((err, req, res, next) => {
+  console.error("Uncaught error:", err);
+  res.status(500).json({ error: "Something went wrong!" });
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection:", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});
