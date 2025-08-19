@@ -24,7 +24,7 @@ const Homepage = () => {
   const fetchAndParseCSV = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:4000/api/uploads/get-uploaded-csv-data');
+      const response = await axios.get( `${process.env.REACT_APP_API_URL}/api/uploads/get-uploaded-csv-data`);
       setCsvData(response.data || []);
       setCurrentPage(1); // Reset to first page on new data
     } catch (error) {

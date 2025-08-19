@@ -9,7 +9,7 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const testRoutes = require('./routes/test')
 const userRoutes = require('./routes/user');
 app.use(cors({
-	origin: "http://localhost:3000",
+	origin: ["http://localhost:3000", "http://192.168.11.25:3000"],
 	credentials: true, // Allow cookies and auth headers
 	methods: "GET,POST,PUT,DELETE",
 	allowedHeaders: "Content-Type,Authorization"
