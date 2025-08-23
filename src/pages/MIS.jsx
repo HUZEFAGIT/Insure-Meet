@@ -57,6 +57,14 @@ const MIS = () => {
   const [allData, setAllData] = useState([]); // ✅ store original dataset
   const [loading, setLoading] = useState(false);
 
+  const tokens = normalize(searchQuery).split(' ').filter(Boolean);
+  useEffect(() => {
+    if (tokens.length === 0) {
+      // ✅ Reset to full data if query is empty
+      setMisData(removeDuplicates(allData));
+    }
+  }, [searchQuery, allData])
+
   useEffect(() => {
     const fetchMISData = async () => {
       setLoading(true);
@@ -79,13 +87,13 @@ const MIS = () => {
   const handleSearch = () => {
     if (!allData || allData.length === 0) return;
 
-    const tokens = normalize(searchQuery).split(' ').filter(Boolean);
+    // const tokens = normalize(searchQuery).split(' ').filter(Boolean);
 
-    if (tokens.length === 0) {
-      // ✅ Reset to full data if query is empty
-      setMisData(removeDuplicates(allData));
-      return;
-    }
+    // if (tokens.length === 0) {
+    //   // Reset to full data if query is empty
+    //   setMisData(removeDuplicates(allData));
+    //   return;
+    // }
 
     const results = allData.filter((row) => {
       const hay = rowToSearchable(row);
@@ -97,25 +105,22 @@ const MIS = () => {
 
   // Export table data as Excel file
   const handleExport = () => {
-    const exportData = misData.map(row => {
-      const obj = {};
-      MIS_TABLE_HEADERS.forEach(header => {
-        if (row[header] !== undefined && row[header] !== null && row[header] !== "") {
-          obj[header] = row[header];
-        } else {
-          const altKey = header.replace(/ /g, '_').toLowerCase();
-          obj[header] = (row[altKey] !== undefined && row[altKey] !== null && row[altKey] !== "") ? row[altKey] : "NA";
-        }
-      });
-      return obj;
+  const exportData = misData.map(row => {
+    const obj = {};
+    MIS_TABLE_HEADERS.forEach(header => {
+      obj[header] = renderCell(row, header);  // ✅ Use same resolver
     });
-    const worksheet = XLSX.utils.json_to_sheet(exportData, { header: MIS_TABLE_HEADERS });
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'MIS Data');
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
-    saveAs(data, 'MIS_Data.xlsx');
-  };
+    return obj;
+  });
+
+  const worksheet = XLSX.utils.json_to_sheet(exportData, { header: MIS_TABLE_HEADERS });
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'MIS Data');
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
+  saveAs(data, 'MIS_Data.xlsx');
+};
+
 
   const HEADER_TO_KEYS = {
   // Core fields you mentioned
@@ -211,6 +216,9 @@ const norm = (s) =>
                 className="max-w-md"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSearch(); // ✅ Enter to search
+                }}
               />
               <Button className="bg-red-700 hover:bg-red-800" onClick={handleSearch}>
                 <Search className="w-4 h-4 mr-2" />
