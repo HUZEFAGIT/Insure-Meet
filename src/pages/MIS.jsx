@@ -19,21 +19,55 @@ const MIS_TABLE_HEADERS = [
   "Billing Amount", "Payment Received_Date"
 ];
 
+// ✅ Normalize string (lowercase + trim)
+const normalize = (str) => (str || "").toString().trim().toLowerCase();
+
+// ✅ Convert row object into searchable text
+const rowToSearchable = (row) => {
+  return Object.values(row).join(" ").toLowerCase();
+};
+
+// ✅ Remove duplicates (normalize + multiple identifiers)
+const removeDuplicates = (data) => {
+  const seen = new Set();
+
+  return data.filter((item) => {
+    // normalize all possible keys
+    const appNo = 
+      item.Application_Number || 
+      item.application_number || 
+      item["Application No"] || 
+      item["application no"] || 
+      null;
+
+    const key = appNo ? String(appNo).trim().toLowerCase() : JSON.stringify(item);
+
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+
 const MIS = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [misData, setMisData] = useState([]);
+  const [allData, setAllData] = useState([]); // ✅ store original dataset
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchMISData = async () => {
       setLoading(true);
       try {
-        const response = await axios.get('http://localhost:4000/api/uploads/get-uploaded-csv-data');
-        setMisData(response.data || []);
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/uploads/get-uploaded-csv-data`);
+        const uniqueData = removeDuplicates(response.data || []);
+        setMisData(uniqueData);
+        setAllData(uniqueData); // ✅ keep unfiltered copy
       } catch (error) {
         setMisData([]);
+        setAllData([]);
         console.error('Error fetching MIS data:', error);
       }
       setLoading(false);
@@ -41,32 +75,31 @@ const MIS = () => {
     fetchMISData();
   }, []);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Search submitted:', { searchQuery, startDate, endDate });
-  };
+  // 🔍 Search handler (runs only when button clicked)
+  const handleSearch = () => {
+    if (!allData || allData.length === 0) return;
 
-  // Helper to render cell value or NA
-  const renderCell = (row, key) => {
-    // Try both original and lowercased keys for flexibility
-    if (row[key] !== undefined && row[key] !== null && row[key] !== "") {
-      return row[key];
+    const tokens = normalize(searchQuery).split(' ').filter(Boolean);
+
+    if (tokens.length === 0) {
+      // ✅ Reset to full data if query is empty
+      setMisData(removeDuplicates(allData));
+      return;
     }
-    // Try lowercased key with underscores replaced
-    const altKey = key.replace(/ /g, '_').toLowerCase();
-    if (row[altKey] !== undefined && row[altKey] !== null && row[altKey] !== "") {
-      return row[altKey];
-    }
-    return "NA";
+
+    const results = allData.filter((row) => {
+      const hay = rowToSearchable(row);
+      return tokens.every((t) => hay.includes(t));
+    });
+
+    setMisData(removeDuplicates(results));
   };
 
   // Export table data as Excel file
   const handleExport = () => {
-    // Prepare data for export: ensure all columns are present and missing values are 'NA'
     const exportData = misData.map(row => {
       const obj = {};
       MIS_TABLE_HEADERS.forEach(header => {
-        // Try both original and lowercased keys
         if (row[header] !== undefined && row[header] !== null && row[header] !== "") {
           obj[header] = row[header];
         } else {
@@ -83,6 +116,72 @@ const MIS = () => {
     const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
     saveAs(data, 'MIS_Data.xlsx');
   };
+
+  const HEADER_TO_KEYS = {
+  // Core fields you mentioned
+  "LA_Name": ["name_of_la", "la_name", "Name of LA"],
+  "Nominee_Name": ["nominee_name", "Nominee Name"],
+  "Rel_With_Nominee": ["nominee_relation", "Nominee Relation"],
+  "Date_of_Birth_LA": ["dob_insured_person", "DOB (Insured Person)"],
+  "Application_Number": ["application_number", "Application Number"],
+  "Application_Type": ["application_type", "Application Type"],
+  "Application_Form": ["application_form", "Application Form"],
+  "Mobile_No_of_LA": ["mobile_no_of_la", "Mobile No of LA"],
+  "State": ["state"],
+  "Priority": ["priority"],
+
+  // Add other headers from MIS_TABLE_HEADERS as needed:
+  // "Policy_Number": ["policy_number"],
+  // "Current Status": ["current_status"],
+  // ...
+};
+
+// helper: normalize keys to compare flexibly
+const norm = (s) =>
+  String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  // Helper to render cell value or NA
+  const renderCell = (row, header) => {
+  // 1) direct match
+  let value = row[header];
+  if (value === undefined || value === null || value === "") {
+    // 2) alias match
+    const aliases = HEADER_TO_KEYS[header] || [];
+    for (const alias of aliases) {
+      if (row[alias] !== undefined && row[alias] !== null && row[alias] !== "") {
+        value = row[alias];
+        break;
+      }
+    }
+
+    // 3) normalized fallback
+    if (value === undefined || value === null || value === "") {
+      const target = norm(header);
+      for (const [k, v] of Object.entries(row)) {
+        if (norm(k) === target && v !== null && v !== "") {
+          value = v;
+          break;
+        }
+      }
+    }
+  }
+
+  // ✅ Format ISO date → dd-mm-yyyy
+  if (value && typeof value === "string" && /\d{4}-\d{2}-\d{2}T/.test(value)) {
+    try {
+      const d = new Date(value);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    } catch {
+      return value;
+    }
+  }
+
+  return value || "NA";
+};
+
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -113,7 +212,7 @@ const MIS = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <Button className="bg-red-700 hover:bg-red-800">
+              <Button className="bg-red-700 hover:bg-red-800" onClick={handleSearch}>
                 <Search className="w-4 h-4 mr-2" />
                 Search
               </Button>
@@ -145,7 +244,7 @@ const MIS = () => {
 
               <Button 
                 className="bg-red-700 hover:bg-red-800"
-                onClick={handleSubmit}
+                onClick={() => console.log('Date range search:', { startDate, endDate })}
               >
                 Submit
               </Button>
