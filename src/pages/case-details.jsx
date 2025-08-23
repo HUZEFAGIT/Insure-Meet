@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom'; // <-- import useNavigate
+import { formatDate, formatTime } from '../lib/utils';
 
 
 const questionsData = [
@@ -529,19 +530,19 @@ const Casedetailspage = ({
                   </tr>
                   <tr>
                     <td className="border border-gray-300 p-3 font-medium bg-gray-50">Case Entrustment Date</td>
-                    <td className="border border-gray-300 p-3">{caseDetails.allocationDate}</td>
+                    <td className="border border-gray-300 p-3">{formatDate(caseDetails.allocationDate)}</td>
                   </tr>
                   <tr>
                     <td className="border border-gray-300 p-3 font-medium bg-gray-50">Date of Verification</td>
-                    <td className="border border-gray-300 p-3">{reportDate}</td>
+                    <td className="border border-gray-300 p-3">{formatDate(reportDate)}</td>
                   </tr>
                   <tr>
                     <td className="border border-gray-300 p-3 font-medium bg-gray-50">Time of Investigation</td>
-                    <td className="border border-gray-300 p-3">{caseDetails.allocationDateTime || "Not specified"}</td>
+                    <td className="border border-gray-300 p-3">{formatTime(caseDetails.allocationDateTime) || "Not specified"}</td>
                   </tr>
                   <tr>
                     <td className="border border-gray-300 p-3 font-medium bg-gray-50">Report Submission Date</td>
-                    <td className="border border-gray-300 p-3">{reportDate}</td>
+                    <td className="border border-gray-300 p-3">{formatDate(reportDate)}</td>
                   </tr>
                   <tr>
                     <td className="border border-gray-300 p-3 font-medium bg-gray-50">Verification Done With</td>

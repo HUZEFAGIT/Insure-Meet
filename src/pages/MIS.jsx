@@ -6,12 +6,13 @@ import { Card, CardContent } from '../components/ui/card';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatDate, formatTime, formatDateTime } from '../lib/utils';
 
 const MIS_TABLE_HEADERS = [
-  "Application_Type", "Application_Number", "Policy_Number", "LA_Name", "Proposer_Name",
-  "Case Allocation_Date", "Case Allocation_Time", "ID_Details", "Gender", "Date_of_Birth_LA",
-  "Nominee_Name", "Nominee_DOB", "Rel_With_Nominee", "Address", "City", "State",
-  "Contact_Number", "Alternate_Contact_Number", "Email_ID", "Application_Form", "KYC_Status",
+  "Application_Type", "Application_Number", "Policy_Number", "name_of_la", "Proposer_Name",
+  "Case Allocation_Date", "Case Allocation_Time", "ID_Details", "Gender", "dob_insured_person",
+  "Nominee_Name", "Nominee_DOB", "nominee_relation", "Address", "City", "State",
+  "mobile_no_of_la", "Alternate_Contact_Number", "Email_ID", "Application_Form", "KYC_Status",
   "Face_Match", "Scheduling_Date", "Calling_Date_time", "Calling_Disposition", "TelephonyNotes",
   "Call_Scheduling Support", "Video_Ops_Support", "Appointment_Date_Client", "Appointment_Time_Client",
   "Current Status", "Conclusion", "Observation", "Completion_Date", "TAT", "Priority",
@@ -49,15 +50,41 @@ const MIS = () => {
   // Helper to render cell value or NA
   const renderCell = (row, key) => {
     // Try both original and lowercased keys for flexibility
+    let value = null;
+    
     if (row[key] !== undefined && row[key] !== null && row[key] !== "") {
-      return row[key];
+      value = row[key];
+    } else {
+      // Try lowercased key with underscores replaced
+      const altKey = key.replace(/ /g, '_').toLowerCase();
+      if (row[altKey] !== undefined && row[altKey] !== null && row[altKey] !== "") {
+        value = row[altKey];
+      }
     }
-    // Try lowercased key with underscores replaced
-    const altKey = key.replace(/ /g, '_').toLowerCase();
-    if (row[altKey] !== undefined && row[altKey] !== null && row[altKey] !== "") {
-      return row[altKey];
+    
+    if (value === null || value === undefined || value === "") {
+      return "NA";
     }
-    return "NA";
+    
+    // Apply specific formatting for date and time columns
+    if (key === "Case Allocation_Date") {
+      return formatDate(value);
+    }
+    
+    if (key === "Case Allocation_Time") {
+      return formatTime(value);
+    }
+    
+    // Format other date-related columns
+    if (key.includes("Date") || key.includes("DOB")) {
+      return formatDate(value);
+    }
+    
+    if (key.includes("Time") || key.includes("_time")) {
+      return formatTime(value);
+    }
+    
+    return value;
   };
 
   // Export table data as Excel file
@@ -67,11 +94,27 @@ const MIS = () => {
       const obj = {};
       MIS_TABLE_HEADERS.forEach(header => {
         // Try both original and lowercased keys
+        let value = null;
         if (row[header] !== undefined && row[header] !== null && row[header] !== "") {
-          obj[header] = row[header];
+          value = row[header];
         } else {
           const altKey = header.replace(/ /g, '_').toLowerCase();
-          obj[header] = (row[altKey] !== undefined && row[altKey] !== null && row[altKey] !== "") ? row[altKey] : "NA";
+          value = (row[altKey] !== undefined && row[altKey] !== null && row[altKey] !== "") ? row[altKey] : null;
+        }
+        
+        // Apply formatting for export as well
+        if (value === null || value === undefined || value === "") {
+          obj[header] = "NA";
+        } else if (header === "Case Allocation_Date") {
+          obj[header] = formatDate(value);
+        } else if (header === "Case Allocation_Time") {
+          obj[header] = formatTime(value);
+        } else if (header.includes("Date") || header.includes("DOB")) {
+          obj[header] = formatDate(value);
+        } else if (header.includes("Time") || header.includes("_time")) {
+          obj[header] = formatTime(value);
+        } else {
+          obj[header] = value;
         }
       });
       return obj;

@@ -69,11 +69,34 @@ async function saveRowsToDb(rows, req, res) {
     await client.query('BEGIN');
     console.log(`Starting DB transaction. Total rows: ${rows.length}`);
 
+    let insertedCount = 0;
+    let skippedCount = 0;
+    const skippedRows = [];
+
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const rowNumber = i + 1;
+      const applicationNumber = row['Application Number'];
 
       try {
+        // Check if application_number already exists in the database
+        const checkResult = await client.query(
+          'SELECT application_number FROM user_uploads WHERE application_number = $1',
+          [applicationNumber]
+        );
+
+        if (checkResult.rows.length > 0) {
+          // Application number already exists, skip this row
+          console.log(`⏭️ Skipping row ${rowNumber}: Application number ${applicationNumber} already exists`);
+          skippedCount++;
+          skippedRows.push({
+            rowNumber,
+            applicationNumber,
+            reason: 'Application number already exists'
+          });
+          continue;
+        }
+
         console.log(`Inserting row ${rowNumber}:`, row);
 
         await client.query(
@@ -84,7 +107,7 @@ async function saveRowsToDb(rows, req, res) {
           )`,
           [
             row['Application_Type'],
-            row['Application Number'],
+            applicationNumber,
             row['Name Of La'],
             parseDate(row['Dob Insusred Person']),
             row['Nominee Name'],
@@ -97,7 +120,8 @@ async function saveRowsToDb(rows, req, res) {
           ]
         );
 
-        console.log(`Row ${rowNumber} inserted successfully.`);
+        console.log(`✅ Row ${rowNumber} inserted successfully.`);
+        insertedCount++;
       } catch (rowError) {
         console.error(`❌ Error inserting row ${rowNumber}:`, row);
         console.error(rowError);
@@ -106,8 +130,20 @@ async function saveRowsToDb(rows, req, res) {
     }
 
     await client.query('COMMIT');
-    console.log('✅ All rows inserted successfully. Transaction committed.');
-    res.status(201).json({ message: 'File uploaded and data saved', count: rows.length });
+    console.log(`✅ Transaction completed. Inserted: ${insertedCount}, Skipped: ${skippedCount}`);
+    
+    const response = {
+      message: 'File uploaded and data processed',
+      inserted: insertedCount,
+      skipped: skippedCount,
+      total: rows.length
+    };
+
+    if (skippedRows.length > 0) {
+      response.skippedRows = skippedRows;
+    }
+
+    res.status(201).json(response);
   } catch (err) {
     console.error('⛔ Error during DB transaction. Rolling back.', err);
     await client.query('ROLLBACK');

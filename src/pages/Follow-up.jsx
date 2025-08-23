@@ -3,6 +3,7 @@ import { Search, FileDown } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent } from '../components/ui/card';
+import { formatDate, formatTime } from '../lib/utils';
 
 const FollowUp = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -175,15 +176,15 @@ const FollowUp = () => {
                   <tr key={index} className="border-b hover:bg-gray-50">
                     <td className="p-2">{claim.applicationType}</td>
                     <td className="p-2">{claim.applicationNumber}</td>
-                    <td className="p-2">{claim.allocationDate}</td>
-                    <td className="p-2">{claim.allocationDateTime}</td>
+                    <td className="p-2">{formatDate(claim.allocationDate)}</td>
+                    <td className="p-2">{formatTime(claim.allocationDateTime)}</td>
                     <td className="p-2">{claim.laName}</td>
                     <td className="p-2">{claim.proposerName}</td>
                     <td className="p-2">{claim.idDetails}</td>
                     <td className="p-2">{claim.gender}</td>
-                    <td className="p-2">{claim.dateOfBirth}</td>
+                    <td className="p-2">{formatDate(claim.dateOfBirth)}</td>
                     <td className="p-2">{claim.nomineeName}</td>
-                    <td className="p-2">{claim.nomineeDoB}</td>
+                    <td className="p-2">{formatDate(claim.nomineeDoB)}</td>
                     <td className="p-2">{claim.relWithNominee}</td>
                     <td className="p-2">{claim.address}</td>
                   </tr>
