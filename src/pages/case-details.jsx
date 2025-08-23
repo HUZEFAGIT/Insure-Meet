@@ -493,7 +493,10 @@ const Casedetailspage = ({
         {/* Header Section - Hidden in Print */}
         <div className="p-6 print:hidden">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h1 className="text-xl sm:text-2xl font-bold">Case Details - Video Verification Report</h1>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2 text-center">
+              DETAILED VIDEO VERIFICATION REPORT (CONFIDENTIAL)
+            </h2>
+            {/* <h1 className="text-xl sm:text-2xl font-bold">Case Details - Video Verification Report</h1> */}
             <Button variant="primary" onClick={handleExport} className="shrink-0">
               <div className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -505,14 +508,36 @@ const Casedetailspage = ({
           </div>
         </div>
 
+        {/* <div className="text-base leading-relaxed text-white-800 text-justify px-7 print:px-5">
+              <p>
+                This is the transcript of the answers provided by the Insured verbally to the questions asked below in a video verification 
+                by the Investigating team on behalf of <span className="underline">Radiaant Captive India Pvt. Ltd.</span> Insurance Company Limited.
+                The answers provided by the Life to be assured would form a part of the proposal for Insurance. The company has accepted the 
+                answers provided in utmost good faith and thereby issued the policy. The Company reserves the right to repudiate any claim arising out of this policy in the event of impersonation or any 
+                misstatement / misrepresentation and / or suppression of material information found either in the said verification or 
+                in the application form.
+              </p>
+            </div> */}
+
         {/* Printable Content */}
         <div className="p-6 print:p-5" ref={printableRef}>
           {/* Report Header */}
-          <div className="mb-8">
+          <div className="mb-8 hidden print:block">
             <h2 className="text-xl sm:text-2xl font-bold mb-2 text-center">
               DETAILED VIDEO VERIFICATION REPORT (CONFIDENTIAL)
             </h2>
           </div>
+
+        <div className="text-base leading-relaxed text-white-800 text-justify -mt-10 mb-4 print:mt-5">
+          <p>
+            This is the transcript of the answers provided by the Insured verbally to the questions asked below in a video verification 
+            by the Investigating team on behalf of <span className="underline">Radiaant Captive India Pvt. Ltd.</span> Insurance Company Limited.
+            The answers provided by the Life to be assured would form a part of the proposal for Insurance. The company has accepted the 
+            answers provided in utmost good faith and thereby issued the policy. The Company reserves the right to repudiate any claim arising out of this policy in the event of impersonation or any 
+            misstatement / misrepresentation and / or suppression of material information found either in the said verification or 
+            in the application form.
+          </p>
+        </div>
 
           {/* Basic Information Section */}
           <div className="mb-8">

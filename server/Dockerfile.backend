@@ -1,0 +1,20 @@
+# Use Node for backend
+FROM node:18
+
+# Set working directory
+WORKDIR /app
+
+# Copy package.json + package-lock.json
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy backend code
+COPY . .
+
+# Expose backend port
+EXPOSE 4000
+
+# Run with nodemon for hot reload
+CMD ["npx", "nodemon", "index.js"]

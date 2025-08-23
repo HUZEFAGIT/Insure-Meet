@@ -48,7 +48,7 @@ const Header = () => {
     };
 
     return (
-        <div className="flex justify-between items-center bg-gray-900 text-white p-4">
+        <div className="flex justify-between items-center bg-gray-900 text-white p-4 print:hidden">
             {/* Left Section: Logo and Company Name */}
             <Link to="/">
                 <div className="flex items-center space-x-4">

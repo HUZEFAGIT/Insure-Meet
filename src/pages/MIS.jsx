@@ -20,21 +20,63 @@ const MIS_TABLE_HEADERS = [
   "Billing Amount", "Payment Received_Date"
 ];
 
+// ✅ Normalize string (lowercase + trim)
+const normalize = (str) => (str || "").toString().trim().toLowerCase();
+
+// ✅ Convert row object into searchable text
+const rowToSearchable = (row) => {
+  return Object.values(row).join(" ").toLowerCase();
+};
+
+// ✅ Remove duplicates (normalize + multiple identifiers)
+const removeDuplicates = (data) => {
+  const seen = new Set();
+
+  return data.filter((item) => {
+    // normalize all possible keys
+    const appNo = 
+      item.Application_Number || 
+      item.application_number || 
+      item["Application No"] || 
+      item["application no"] || 
+      null;
+
+    const key = appNo ? String(appNo).trim().toLowerCase() : JSON.stringify(item);
+
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+
 const MIS = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [misData, setMisData] = useState([]);
+  const [allData, setAllData] = useState([]); // ✅ store original dataset
   const [loading, setLoading] = useState(false);
+
+  const tokens = normalize(searchQuery).split(' ').filter(Boolean);
+  useEffect(() => {
+    if (tokens.length === 0) {
+      // ✅ Reset to full data if query is empty
+      setMisData(removeDuplicates(allData));
+    }
+  }, [searchQuery, allData])
 
   useEffect(() => {
     const fetchMISData = async () => {
       setLoading(true);
       try {
-        const response = await axios.get('http://localhost:4000/api/uploads/get-uploaded-csv-data');
-        setMisData(response.data || []);
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/uploads/get-uploaded-csv-data`);
+        const uniqueData = removeDuplicates(response.data || []);
+        setMisData(uniqueData);
+        setAllData(uniqueData); // ✅ keep unfiltered copy
       } catch (error) {
         setMisData([]);
+        setAllData([]);
         console.error('Error fetching MIS data:', error);
       }
       setLoading(false);
@@ -155,8 +197,11 @@ const MIS = () => {
                 className="max-w-md"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSearch(); // ✅ Enter to search
+                }}
               />
-              <Button className="bg-red-700 hover:bg-red-800">
+              <Button className="bg-red-700 hover:bg-red-800" onClick={handleSearch}>
                 <Search className="w-4 h-4 mr-2" />
                 Search
               </Button>
@@ -188,7 +233,7 @@ const MIS = () => {
 
               <Button 
                 className="bg-red-700 hover:bg-red-800"
-                onClick={handleSubmit}
+                onClick={() => console.log('Date range search:', { startDate, endDate })}
               >
                 Submit
               </Button>
@@ -209,7 +254,7 @@ const MIS = () => {
                 {loading ? (
                   <tr><td colSpan={MIS_TABLE_HEADERS.length} className="text-center p-4">Loading...</td></tr>
                 ) : misData.length === 0 ? (
-                  <tr><td colSpan={MIS_TABLE_HEADERS.length} className="text-center p-4">No data found</td></tr>
+                  <tr><td colSpan={MIS_TABLE_HEADERS.length} className="text-center font-bold p-4">No data found</td></tr>
                 ) : (
                   misData.map((row, idx) => (
                     <tr key={row.id || idx} className="hover:bg-gray-50">

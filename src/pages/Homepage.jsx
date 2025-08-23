@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Card, CardHeader, CardContent } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ClipLoader } from 'react-spinners';
@@ -12,6 +12,8 @@ const ROWS_OPTIONS = [15, 30, 50, 100];
 const Homepage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [csvData, setCsvData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]); // ✅ will drive the table
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Pagination state
@@ -20,44 +22,134 @@ const Homepage = () => {
 
   const navigate = useNavigate();
 
-  // Fetch data directly from API (no XLSX parsing)
+  // ---- helpers for robust search ----
+  const normalize = (s) =>
+    (s ?? '')
+      .toString()
+      .normalize('NFD') // strip accents
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const formatDateVariants = (d) => {
+    if (!d) return [];
+    try {
+      const dt = new Date(d);
+      // include a few common variations users might type
+      return [
+        dt.toLocaleDateString(),                    // system locale
+        dt.toLocaleDateString('en-IN'),             // dd/mm/yyyy (India)
+        dt.toISOString().slice(0, 10),              // yyyy-mm-dd
+      ].map(normalize);
+    } catch {
+      return [];
+    }
+  };
+
+  const rowToSearchable = (row) => {
+    const parts = [
+      row.application_number,
+      row.name_of_la,
+      row.application_type,
+      row.application_form,
+      row.priority,            // assuming this is “Current Status”
+      row.state,
+      row.address,
+      row.mobile_no_of_la,
+    ];
+
+    // add multiple date renderings to help match user input
+    parts.push(...formatDateVariants(row.dob_insured_person));
+
+    return normalize(parts.filter(Boolean).join(' '));
+  };
+  // -----------------------------------
+
+  // ✅ Remove duplicates by Application Number
+  const removeDuplicates = (arr) => {
+    const seen = new Set();
+    return arr.filter((item) => {
+      if (!item.application_number) return true; // keep if no number
+      if (seen.has(item.application_number)) return false; // skip duplicate
+      seen.add(item.application_number);
+      return true;
+    });
+  };
+
+  // Fetch data directly from API
   const fetchAndParseCSV = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:4000/api/uploads/get-uploaded-csv-data');
-      setCsvData(response.data || []);
-      setCurrentPage(1); // Reset to first page on new data
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/uploads/get-uploaded-csv-data`);
+      const data = response.data || [];
+      setCsvData(data);
+      setFilteredData(data); // ✅ initialize filtered data
+      const uniqueData = removeDuplicates(response.data); // ✅ remove dups
+      setData(uniqueData);
+      setFilteredData(uniqueData);
+      setCurrentPage(1);
     } catch (error) {
       console.error('Error processing the files:', error);
     }
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchAndParseCSV();
-  }, []);
+// ✅ Load CSV only once on mount
+useEffect(() => {
+  fetchAndParseCSV();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
 
-  // Pagination logic
-  const totalRows = csvData.length;
+useEffect(() => {
+  if (searchQuery.trim() === '') {
+    setFilteredData(removeDuplicates(csvData));
+    setCurrentPage(1);
+  }
+}, [searchQuery, csvData]);
+
+// 🔍 Search handler (runs only when button clicked)
+const handleSearch = () => {
+  if (!csvData || csvData.length === 0) return;
+
+  const tokens = normalize(searchQuery).split(' ').filter(Boolean);
+
+  if (tokens.length === 0) {
+    setFilteredData(removeDuplicates(csvData)); // reset to full data
+    setCurrentPage(1);
+    return;
+  }
+
+  const results = csvData.filter((row) => {
+    const hay = rowToSearchable(row);
+    return tokens.every((t) => hay.includes(t));
+  });
+
+  setFilteredData(removeDuplicates(results));
+  setCurrentPage(1);
+};
+
+  // Pagination logic (use filteredData)
+  const totalRows = filteredData.length;
   const totalPages = Math.ceil(totalRows / rowsPerPage);
-  const paginatedData = csvData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const paginatedData = filteredData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
   const handleRowsPerPageChange = (e) => {
     setRowsPerPage(Number(e.target.value));
-    setCurrentPage(1); // Reset to first page when rows per page changes
+    setCurrentPage(1);
   };
 
   const handlePrevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
   const handleNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
-  // Handler for Video-verification
+  // Handlers
   const handleVideoVerification = (row) => {
     navigate('/video-verification', { state: { applicantDetails: row } });
     setTimeout(() => {
       console.log('Video-verification row:', row);
     }, 0);
   };
-  // Handler for Case Details
+
   const handleCaseDetails = (row) => {
     navigate('/case-details');
     setTimeout(() => {
@@ -91,8 +183,11 @@ const Homepage = () => {
                 className="max-w-md"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSearch(); // ✅ Enter to search
+                }}
               />
-              <Button className="bg-red-700 hover:bg-red-800">
+              <Button className="bg-red-700 hover:bg-red-800" onClick={handleSearch}>
                 <Search className="w-4 h-4 mr-2" />
                 Search
               </Button>
@@ -166,12 +261,14 @@ const Homepage = () => {
                   </thead>
                   <tbody>
                     {paginatedData.map((row, index) => (
-                      <tr key={row.id} className="bg-white hover:bg-gray-50">
+                      <tr key={row.id ?? `${row.application_number}-${index}`} className="bg-white hover:bg-gray-50">
                         <td className="px-2 py-2">{index + 1 + (currentPage - 1) * rowsPerPage}</td>
                         <td className="px-2 py-2">{row.application_type}</td>
                         <td className="px-2 py-2">{row.application_number}</td>
                         <td className="px-2 py-2">{row.name_of_la}</td>
-                        <td className="px-2 py-2">{row.dob_insured_person ? new Date(row.dob_insured_person).toLocaleDateString() : ''}</td>
+                        <td className="px-2 py-2">
+                          {row.dob_insured_person ? new Date(row.dob_insured_person).toLocaleDateString('en-IN') : ''}
+                        </td>
                         <td className="px-2 py-2">{row.nominee_name}</td>
                         <td className="px-2 py-2">{row.nominee_relation}</td>
                         <td className="px-2 py-2">{row.address}</td>
@@ -181,7 +278,7 @@ const Homepage = () => {
                         <td className="px-2 py-2">{row.priority}</td>
                         <td className="px-2 py-2 flex gap-2">
                           <Button className="bg-red-700 hover:bg-red-800" onClick={() => handleVideoVerification(row)}>Video-verification</Button>
-                          <Button className="bg-red-700 hover:bg-red-800"onClick={() => handleCaseDetails(row)}>Case Details</Button>
+                          <Button className="bg-red-700 hover:bg-red-800" onClick={() => handleCaseDetails(row)}>Case Details</Button>
                         </td>
                       </tr>
                     ))}
