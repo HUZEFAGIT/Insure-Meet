@@ -6,12 +6,13 @@ import { Card, CardContent } from '../components/ui/card';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatDate, formatTime, formatDateTime } from '../lib/utils';
 
 const MIS_TABLE_HEADERS = [
-  "Application_Type", "Application_Number", "Policy_Number", "LA_Name", "Proposer_Name",
-  "Case Allocation_Date", "Case Allocation_Time", "ID_Details", "Gender", "Date_of_Birth_LA",
-  "Nominee_Name", "Nominee_DOB", "Rel_With_Nominee", "Address", "City", "State",
-  "Contact_Number", "Alternate_Contact_Number", "Email_ID", "Application_Form", "KYC_Status",
+  "Application_Type", "Application_Number", "Policy_Number", "name_of_la", "Proposer_Name",
+  "Case Allocation_Date", "Case Allocation_Time", "ID_Details", "Gender", "dob_insured_person",
+  "Nominee_Name", "Nominee_DOB", "nominee_relation", "Address", "City", "State",
+  "mobile_no_of_la", "Alternate_Contact_Number", "Email_ID", "Application_Form", "KYC_Status",
   "Face_Match", "Scheduling_Date", "Calling_Date_time", "Calling_Disposition", "TelephonyNotes",
   "Call_Scheduling Support", "Video_Ops_Support", "Appointment_Date_Client", "Appointment_Time_Client",
   "Current Status", "Conclusion", "Observation", "Completion_Date", "TAT", "Priority",
@@ -83,110 +84,90 @@ const MIS = () => {
     fetchMISData();
   }, []);
 
-  // 🔍 Search handler (runs only when button clicked)
-  const handleSearch = () => {
-    if (!allData || allData.length === 0) return;
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('Search submitted:', { searchQuery, startDate, endDate });
+  };
 
-    // const tokens = normalize(searchQuery).split(' ').filter(Boolean);
-
-    // if (tokens.length === 0) {
-    //   // Reset to full data if query is empty
-    //   setMisData(removeDuplicates(allData));
-    //   return;
-    // }
-
-    const results = allData.filter((row) => {
-      const hay = rowToSearchable(row);
-      return tokens.every((t) => hay.includes(t));
-    });
-
-    setMisData(removeDuplicates(results));
+  // Helper to render cell value or NA
+  const renderCell = (row, key) => {
+    // Try both original and lowercased keys for flexibility
+    let value = null;
+    
+    if (row[key] !== undefined && row[key] !== null && row[key] !== "") {
+      value = row[key];
+    } else {
+      // Try lowercased key with underscores replaced
+      const altKey = key.replace(/ /g, '_').toLowerCase();
+      if (row[altKey] !== undefined && row[altKey] !== null && row[altKey] !== "") {
+        value = row[altKey];
+      }
+    }
+    
+    if (value === null || value === undefined || value === "") {
+      return "NA";
+    }
+    
+    // Apply specific formatting for date and time columns
+    if (key === "Case Allocation_Date") {
+      return formatDate(value);
+    }
+    
+    if (key === "Case Allocation_Time") {
+      return formatTime(value);
+    }
+    
+    // Format other date-related columns
+    if (key.includes("Date") || key.includes("DOB")) {
+      return formatDate(value);
+    }
+    
+    if (key.includes("Time") || key.includes("_time")) {
+      return formatTime(value);
+    }
+    
+    return value;
   };
 
   // Export table data as Excel file
   const handleExport = () => {
-  const exportData = misData.map(row => {
-    const obj = {};
-    MIS_TABLE_HEADERS.forEach(header => {
-      obj[header] = renderCell(row, header);  // ✅ Use same resolver
-    });
-    return obj;
-  });
-
-  const worksheet = XLSX.utils.json_to_sheet(exportData, { header: MIS_TABLE_HEADERS });
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'MIS Data');
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
-  saveAs(data, 'MIS_Data.xlsx');
-};
-
-
-  const HEADER_TO_KEYS = {
-  // Core fields you mentioned
-  "LA_Name": ["name_of_la", "la_name", "Name of LA"],
-  "Nominee_Name": ["nominee_name", "Nominee Name"],
-  "Rel_With_Nominee": ["nominee_relation", "Nominee Relation"],
-  "Date_of_Birth_LA": ["dob_insured_person", "DOB (Insured Person)"],
-  "Application_Number": ["application_number", "Application Number"],
-  "Application_Type": ["application_type", "Application Type"],
-  "Application_Form": ["application_form", "Application Form"],
-  "Mobile_No_of_LA": ["mobile_no_of_la", "Mobile No of LA"],
-  "State": ["state"],
-  "Priority": ["priority"],
-
-  // Add other headers from MIS_TABLE_HEADERS as needed:
-  // "Policy_Number": ["policy_number"],
-  // "Current Status": ["current_status"],
-  // ...
-};
-
-// helper: normalize keys to compare flexibly
-const norm = (s) =>
-  String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
-
-  // Helper to render cell value or NA
-  const renderCell = (row, header) => {
-  // 1) direct match
-  let value = row[header];
-  if (value === undefined || value === null || value === "") {
-    // 2) alias match
-    const aliases = HEADER_TO_KEYS[header] || [];
-    for (const alias of aliases) {
-      if (row[alias] !== undefined && row[alias] !== null && row[alias] !== "") {
-        value = row[alias];
-        break;
-      }
-    }
-
-    // 3) normalized fallback
-    if (value === undefined || value === null || value === "") {
-      const target = norm(header);
-      for (const [k, v] of Object.entries(row)) {
-        if (norm(k) === target && v !== null && v !== "") {
-          value = v;
-          break;
+    // Prepare data for export: ensure all columns are present and missing values are 'NA'
+    const exportData = misData.map(row => {
+      const obj = {};
+      MIS_TABLE_HEADERS.forEach(header => {
+        // Try both original and lowercased keys
+        let value = null;
+        if (row[header] !== undefined && row[header] !== null && row[header] !== "") {
+          value = row[header];
+        } else {
+          const altKey = header.replace(/ /g, '_').toLowerCase();
+          value = (row[altKey] !== undefined && row[altKey] !== null && row[altKey] !== "") ? row[altKey] : null;
         }
-      }
-    }
-  }
-
-  // ✅ Format ISO date → dd-mm-yyyy
-  if (value && typeof value === "string" && /\d{4}-\d{2}-\d{2}T/.test(value)) {
-    try {
-      const d = new Date(value);
-      const day = String(d.getDate()).padStart(2, "0");
-      const month = String(d.getMonth() + 1).padStart(2, "0");
-      const year = d.getFullYear();
-      return `${day}-${month}-${year}`;
-    } catch {
-      return value;
-    }
-  }
-
-  return value || "NA";
-};
-
+        
+        // Apply formatting for export as well
+        if (value === null || value === undefined || value === "") {
+          obj[header] = "NA";
+        } else if (header === "Case Allocation_Date") {
+          obj[header] = formatDate(value);
+        } else if (header === "Case Allocation_Time") {
+          obj[header] = formatTime(value);
+        } else if (header.includes("Date") || header.includes("DOB")) {
+          obj[header] = formatDate(value);
+        } else if (header.includes("Time") || header.includes("_time")) {
+          obj[header] = formatTime(value);
+        } else {
+          obj[header] = value;
+        }
+      });
+      return obj;
+    });
+    const worksheet = XLSX.utils.json_to_sheet(exportData, { header: MIS_TABLE_HEADERS });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'MIS Data');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    saveAs(data, 'MIS_Data.xlsx');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">

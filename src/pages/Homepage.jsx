@@ -255,7 +255,7 @@ const handleSearch = () => {
                       <th className="px-2 py-2 text-left">State</th>
                       <th className="px-2 py-2 text-left">Mobile No of LA</th>
                       <th className="px-2 py-2 text-left">Application Form</th>
-                      <th className="px-2 py-2 text-left">Priority</th>
+                      <th className="px-2 py-2 text-left">Observation</th> 
                       <th className="px-2 py-2 text-left">Actions</th>
                     </tr>
                   </thead>

@@ -5,18 +5,46 @@ import { Link, useNavigate } from 'react-router-dom';
 
 const Header = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [userRole, setUserRole] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Check if user is authenticated
+        // Check if user is authenticated and get user role
         const user = localStorage.getItem("user");
-        setIsAuthenticated(!!user);
+        if (user) {
+            try {
+                const userData = JSON.parse(user);
+                setUserRole(userData.role);
+                setIsAuthenticated(true);
+            } catch (error) {
+                console.error('Error parsing user data:', error);
+                setIsAuthenticated(false);
+            }
+        } else {
+            setIsAuthenticated(false);
+        }
     }, []);
 
     const handleLogout = () => {
         localStorage.removeItem("user"); // Remove authentication
         setIsAuthenticated(false);
+        setUserRole(null);
         navigate("/login"); // Redirect to login page
+    };
+
+    // Function to check if a navigation item should be shown based on user role
+    const shouldShowNavItem = (itemName) => {
+        // If user is not authenticated, show all items (or you can choose to hide them)
+        if (!isAuthenticated) return true;
+        
+        // If user role is scheduler, hide specific items
+        if (userRole === 'scheduler') {
+            const hiddenItems = ['mis', 'video-verification', 'case-details'];
+            return !hiddenItems.includes(itemName);
+        }
+        
+        // For other roles, show all items
+        return true;
     };
 
     return (
@@ -46,30 +74,36 @@ const Header = () => {
                 >
                     Applications
                 </Link>
-                <Link
-                    to="/mis"
-                    className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
-                >
-                    MIS
-                </Link>
+                {shouldShowNavItem('mis') && (
+                    <Link
+                        to="/mis"
+                        className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
+                    >
+                        MIS
+                    </Link>
+                )}
                 {/* <Link
                     to="/follow-up"
                     className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
                 >
                     Follow Ups
                 </Link> */}
-                <Link
-                    to="/video-verification"
-                    className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
-                >
-                    Video Verification
-                </Link>
-                 <Link
-                    to="/case-details"
-                    className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
-                >
-                    Case Details
-                </Link>
+                {shouldShowNavItem('video-verification') && (
+                    <Link
+                        to="/video-verification"
+                        className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
+                    >
+                        Video Verification
+                    </Link>
+                )}
+                {shouldShowNavItem('case-details') && (
+                    <Link
+                        to="/case-details"
+                        className="text-sm font-medium px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 hover:scale-105 transition transform duration-200 ease-in-out"
+                    >
+                        Case Details
+                    </Link>
+                )}
             </div>
 
             {/* Right Section: Login/Logout */}

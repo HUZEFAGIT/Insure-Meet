@@ -638,11 +638,11 @@ const handleDocumentSelection = (index, value) => {
             <div className="text-base leading-relaxed text-white-800 text-justify">
               <p>
                 This is the transcript of the answers provided by the Insured verbally to the questions asked below in a video verification 
-                by the Investigating team on behalf of  <span className="underline">Radiaant Captive India Pvt. Ltd.</span> Insurance Company Limited.
+                by the Investigating team on behalf of <span className="underline">Radiaant Captive India Pvt. Ltd.</span> Insurance Company Limited.
                 The answers provided by the Life to be assured would form a part of the proposal for Insurance. The company has accepted the 
-                answers provided in utmost good faith and thereby issued the policy. The Company reserves the right to repudiate any claim arising out of this policy in the event of impersonation or any 
-                misstatement / misrepresentation and / or suppression of material information found either in the said verification or 
-                in the application form.
+                answers provided in utmost good faith and thereby issued the policy. The Company reserves the right to repudiate any claim 
+                arising out of this policy in the event of impersonation or any misstatement / misrepresentation and / or suppression of 
+                material information found either in the said verification or in the application form.
               </p>
             </div>
           </div>
